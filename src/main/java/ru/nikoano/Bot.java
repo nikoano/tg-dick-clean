@@ -45,13 +45,13 @@ public class Bot implements LongPollingSingleThreadUpdateConsumer, InitializingB
 		}
 
 		User viaBot = message.getViaBot();
-		log.info("viaBot {}", viaBot);
 		if (banBotsSet.contains(viaBot.getUserName())) {
 			try {
 				telegramClient.execute(new DeleteMessage(
 						String.valueOf(message.getChatId()),
 						message.getMessageId()
 				));
+				log.info("deleted msg with {} from {}", viaBot.getUserName(), message.getFrom());
 			} catch (TelegramApiException e) {
 				log.error("delete msg error", e);
 			}
