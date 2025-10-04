@@ -9,17 +9,29 @@ import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
 import org.telegram.telegrambots.longpolling.util.DefaultGetUpdatesGenerator;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.TelegramUrl;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import org.telegram.telegrambots.meta.generics.TelegramClient;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class Bot implements LongPollingSingleThreadUpdateConsumer, InitializingBean {
 	private final TelegramBotsLongPollingApplication telegramBotsLongPollingApplication;
+	private final TelegramClient telegramClient;
 	@Value("${bot.token}")
 	private String botToken;
+
+	@Value("${ban.bots}")
+	private String[] banBots;
+	private Set<String> banBotsSet;
 
 	@Override
 	public void consume(Update update) {
@@ -34,10 +46,21 @@ public class Bot implements LongPollingSingleThreadUpdateConsumer, InitializingB
 
 		User viaBot = message.getViaBot();
 		log.info("viaBot {}", viaBot);
+		if (banBotsSet.contains(viaBot.getUserName())) {
+			try {
+				telegramClient.execute(new DeleteMessage(
+						String.valueOf(message.getChatId()),
+						message.getMessageId()
+				));
+			} catch (TelegramApiException e) {
+				log.error("delete msg error", e);
+			}
+		}
 	}
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
+		banBotsSet = new HashSet<>(Arrays.asList(banBots));
 		telegramBotsLongPollingApplication.registerBot(botToken, () -> TelegramUrl.DEFAULT_URL, new DefaultGetUpdatesGenerator(), this);
 	}
 }
