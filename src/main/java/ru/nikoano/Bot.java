@@ -51,11 +51,16 @@ public class Bot implements LongPollingSingleThreadUpdateConsumer, InitializingB
 						String.valueOf(message.getChatId()),
 						message.getMessageId()
 				));
-				log.info("deleted msg with {} from {}", viaBot.getUserName(), message.getFrom());
+				log.info("deleted msg with {} from {}", viaBot.getUserName(), userToString(message.getFrom()));
 			} catch (TelegramApiException e) {
 				log.error("delete msg error", e);
 			}
 		}
+	}
+
+	private String userToString(User user) {
+		return "User(id=%s, firstName=%s, lastName=%s, userName=%s)"
+				.formatted(user.getId(), user.getFirstName(), user.getLastName(), user.getUserName());
 	}
 
 	@Override
